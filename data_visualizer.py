@@ -18,11 +18,10 @@ class DataVisualize():
         chosen_matches = list(chosen_is_match_this_week.keys())
         league_schedule = pd.DataFrame(columns=teams_name_index_map.keys(), index=teams_name_index_map.keys())
         for match in chosen_matches:
-            print(match)
             team1_idx, team2_idx, result = match[0], match[1], match[2]
             team1_name = next(name for name, idx in teams_name_index_map.items() if idx == team1_idx)
             team2_name = next(name for name, idx in teams_name_index_map.items() if idx == team2_idx)
             league_schedule.at[team1_name, team2_name] = f'Week {result}'
+        league_schedule.to_excel("output/bundesliga_schedule.xlsx")
 
-        league_schedule.to_excel("output/bundesliga_schedule_py.xlsx")
 
