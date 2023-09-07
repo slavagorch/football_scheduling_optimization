@@ -1,38 +1,45 @@
 import streamlit as st
 import pandas as pd
 import xlsxwriter
+from main import run_pipeline
+import io
 
 schedule_df = pd.read_excel("bundesliga_schedule.xlsx")
 
 # Streamlit app
-st.title("Football Schedule App")
+st.title("Bundesliga Football Schedule App")
+
+
+@st.cache_resource
+def run_optimizer():
+    return run_pipeline()
+
+schedule = run_optimizer()
+
+# Display teams map
+st.write("Bundesliga team map")
+st.plotly_chart(schedule.fig)
 
 # Display the schedule_results table
-st.write("Football Schedule:")
+st.write("Optimized Schedule:")
 st.dataframe(schedule_df, use_container_width=True)
 
 # Dropdown to select a team
-selected_team = str(st.selectbox("Select a Team", schedule_df.columns))
+selected_team = str(st.selectbox("Select a Team", schedule.filtered_schedule_per_team_dict.keys()))
 
 # Filter the schedule for the selected team
-filtered_schedule = schedule_df[[selected_team]]
-filtered_schedule.index.name = 'Team'
-filtered_schedule.reset_index(inplace=True)
-st.write(f"Schedule for {selected_team}:")
-st.dataframe(filtered_schedule, use_container_width=True)
+st.table(schedule.filtered_schedule_per_team_dict[selected_team]) #, use_container_width=True)
 
 # Button to export schedule to XLSX
-if st.button("Export Schedule to XLSX"):
-    # Create an XlsxWriter workbook and add a worksheet.
-    workbook = xlsxwriter.Workbook('football_schedule.xlsx')
-    worksheet = workbook.add_worksheet()
 
-    # Write the schedule to the XLSX file.
-    for i, team in enumerate(filtered_schedule['Team']):
-        week = filtered_schedule[selected_team].iloc[i]
-        worksheet.write(i, 0, team)
-        worksheet.write(i, 1, week)
+# download button 2 to download dataframe as xlsx
+buffer = io.BytesIO()
+with pd.ExcelWriter(buffer, engine='xlsxwriter') as writer:
+    schedule.league_schedule_table.to_excel(writer, sheet_name='Schedule', index=False)
 
-    # Close the workbook to save the file.
-    workbook.close()
-    st.success("Schedule exported to football_schedule.xlsx")
+    download2 = st.download_button(
+        label="Download schedule as Excel",
+        data=buffer,
+        file_name='bundesliga_schedule.xlsx',
+        mime='application/vnd.ms-excel'
+    )

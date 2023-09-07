@@ -64,5 +64,5 @@ class DataPreprocess():
         self.teams_list = list(all_teams_coords_df['team'])
         self.teams_range = list(range(1, len(self.teams_list) + 1))
         self.teams_name_index_map = dict(zip(self.teams_list, self.teams_range))
-        self.weeks_range = range(1, 40)  # assuming 40 weeks in the season
+        self.weeks_range = range(1, 35)  # assuming 35 game weeks in the season
         self.team_distance_matrix_dict = DataPreprocess.construct_distance_matrix(all_teams_coords_df, self.teams_name_index_map)
