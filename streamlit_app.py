@@ -1,14 +1,19 @@
 import streamlit as st
 import pandas as pd
-import xlsxwriter
 from main import run_pipeline
 import io
+from PIL import Image
+import base64
 
 schedule_df = pd.read_excel("bundesliga_schedule.xlsx")
 
 # Streamlit app
-st.title("Bundesliga Football Schedule App")
+logo_col, title_col = st.columns([0.2, 0.8])
 
+logo = Image.open("data/bundesliga_logo.jpg")
+logo_col.image(logo)
+
+title_col.title("Bundesliga Schedule App")
 
 @st.cache_resource
 def run_optimizer():
@@ -16,12 +21,13 @@ def run_optimizer():
 
 schedule = run_optimizer()
 
+
 # Display teams map
-st.write("Bundesliga team map")
+st.header("Bundesliga teams map")
 st.plotly_chart(schedule.fig)
 
 # Display the schedule_results table
-st.write("Optimized Schedule:")
+st.header("Optimized Schedule:")
 st.dataframe(schedule_df, use_container_width=True)
 
 # Dropdown to select a team
