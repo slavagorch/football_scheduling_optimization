@@ -26,8 +26,8 @@ class DataPreprocess():
         # add missing team information
         all_teams_coords_df = DataPreprocess.add_missing_data(teams_coords_df)
         all_teams_coords_df = \
-        all_teams_coords_df[["FDCOUK", "Latitude", "Longitude"]].rename(columns=TABLE_COORDS_COLUMNS)[
-            TABLE_COORDS_COLUMNS.values()]
+            all_teams_coords_df[["FDCOUK", "Latitude", "Longitude"]].rename(columns=TABLE_COORDS_COLUMNS)[
+                TABLE_COORDS_COLUMNS.values()]
         return all_teams_coords_df
 
     @staticmethod
@@ -54,7 +54,7 @@ class DataPreprocess():
             [haversine_vector([[row.lat, row.lon]] * len(all_teams_coords_df), all_teams_coords_df[["lat", "lon"]]) for
              index, row in all_teams_coords_df.iterrows()], columns=all_teams_coords_df.team,
             index=all_teams_coords_df.team
-            )
+        )
         teams_distance_matrix_dict = {
             (team_name_index_map[team_i], team_name_index_map[team_j]): teams_distance_matrix_df.loc[team_i, team_j]
             for team_i in teams_distance_matrix_df.index for team_j in teams_distance_matrix_df.columns}
@@ -64,5 +64,6 @@ class DataPreprocess():
         self.teams_list = list(all_teams_coords_df['team'])
         self.teams_range = list(range(1, len(self.teams_list) + 1))
         self.teams_name_index_map = dict(zip(self.teams_list, self.teams_range))
-        self.weeks_range = range(1, 35)  # assuming 35 game weeks in the season
-        self.team_distance_matrix_dict = DataPreprocess.construct_distance_matrix(all_teams_coords_df, self.teams_name_index_map)
+        self.weeks_range = range(1, 35)  # assuming 34 game weeks in the season
+        self.team_distance_matrix_dict = DataPreprocess.construct_distance_matrix(all_teams_coords_df,
+                                                                                  self.teams_name_index_map)

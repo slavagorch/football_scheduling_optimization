@@ -1,5 +1,6 @@
 import pyomo.environ as pe
 
+
 class SetsBuilder():
     def __init__(self, m, teams_range, weeks_range):
         self.m = m
@@ -10,6 +11,8 @@ class SetsBuilder():
     def build_all_sets(self, teams_range, weeks_range):
         self.build_teams_range_set(self.m, teams_range)
         self.build_weeks_range_set(self.m, weeks_range)
+        self.build_weeks_first_half_set(self.m, weeks_range)
+        self.build_weeks_second_half_set(self.m, weeks_range)
         return self.m
 
     @staticmethod
@@ -20,3 +23,10 @@ class SetsBuilder():
     def build_weeks_range_set(m, weeks_range):
         m.weeks_range_set = pe.Set(initialize=weeks_range, dimen=1)
 
+    @staticmethod
+    def build_weeks_first_half_set(m, weeks_range):
+        m.weeks_first_half_set = pe.Set(initialize=list(weeks_range)[:len(weeks_range) // 2], dimen=1)
+
+    @staticmethod
+    def build_weeks_second_half_set(m, weeks_range):
+        m.weeks_second_half_set = pe.Set(initialize=list(weeks_range)[len(weeks_range) // 2:], dimen=1)

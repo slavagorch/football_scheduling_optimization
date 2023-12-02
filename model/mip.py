@@ -30,11 +30,10 @@ class ModelBuild():
         model_instance = m.create_instance()
         solver.solve(
             model_instance,
-            #tee=True,
+            # tee=True,
             # keepfiles=True,
             # logfile="model_logfile",
-            #report_timing=True,
-            #symbolic_solver_labels=True
+            # report_timing=True,
+            # symbolic_solver_labels=True
         )
         return model_instance
-

@@ -5,7 +5,7 @@ import io
 from PIL import Image
 import base64
 
-schedule_df = pd.read_excel("bundesliga_schedule.xlsx")
+schedule_df = pd.read_excel("output/bundesliga_schedule.xlsx")
 
 # Streamlit app
 logo_col, title_col = st.columns([0.2, 0.8])
@@ -15,12 +15,13 @@ logo_col.image(logo)
 
 title_col.title("Bundesliga Schedule App")
 
+
 @st.cache_resource
 def run_optimizer():
     return run_pipeline()
 
-schedule = run_optimizer()
 
+schedule = run_optimizer()
 
 # Display teams map
 st.header("Bundesliga teams map")
@@ -34,7 +35,7 @@ st.dataframe(schedule_df, use_container_width=True)
 selected_team = str(st.selectbox("Select a Team", schedule.filtered_schedule_per_team_dict.keys()))
 
 # Filter the schedule for the selected team
-st.table(schedule.filtered_schedule_per_team_dict[selected_team]) #, use_container_width=True)
+st.table(schedule.filtered_schedule_per_team_dict[selected_team])
 
 # Button to export schedule to XLSX
 
