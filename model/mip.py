@@ -7,15 +7,31 @@ from model.constraints import ConstraintsBuilder
 from model.objective import ObjectiveBuilder
 
 
-class ModelBuild():
-    def __init__(self, teams_list, teams_range, weeks_range, team_distance_matrix_dict):
+class Model():
+    def __init__(self,
+                 teams_list,
+                 teams_range,
+                 weeks_range,
+                 team_distance_matrix_dict,
+                 team_ranks_dict,
+                 match_attractiveness_dict):
         self.teams_list = teams_list
         self.teams_range = teams_range
         self.weeks_range = weeks_range
-        self.build_model(teams_range, weeks_range, team_distance_matrix_dict)
-        self.solved_model = self.solve_model(self.m)
+        self.team_ranks_dict = team_ranks_dict
+        self.match_attractiveness_dict = match_attractiveness_dict
+        self.build_model(teams_range,
+                         weeks_range,
+                         team_distance_matrix_dict,
+                         team_ranks_dict,
+                         match_attractiveness_dict)
 
-    def build_model(self, teams_range, weeks_range, team_distance_matrix_dict):
+    def build_model(self,
+                    teams_range,
+                    weeks_range,
+                    team_distance_matrix_dict,
+                    team_rank_dict,
+                    match_attractiveness_dict):
         self.m = pe.ConcreteModel()
         SetsBuilder(self.m, teams_range, weeks_range)
         VariablesBuilder(self.m)

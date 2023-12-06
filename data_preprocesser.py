@@ -1,5 +1,7 @@
 import pandas as pd
 from haversine import haversine_vector
+from collections import defaultdict
+import itertools
 
 TABLE_COORDS_COLUMNS = {
     "FDCOUK": "team",
@@ -10,13 +12,29 @@ TABLE_COORDS_COLUMNS = {
 
 class DataPreprocess():
     def __init__(self):
+        self.team_ranks_dict = None
+        self.match_attractiveness_dict = None
         self.last_season_results_df = None
         self.stadium_coords_df = None
         self.teams_list = None
         self.teams_range = None
         self.weeks_range = None
+        self.teams_name_index_map = None
+        self.team_distance_matrix_dict = None
+        self.team_season_points = None
+
         self.all_teams_coords_df = self.preprocess_data()
         self.construct_model_input(all_teams_coords_df=self.all_teams_coords_df)
+
+    def construct_model_input(self, all_teams_coords_df):
+        self.teams_list = list(all_teams_coords_df['team'])
+        self.teams_range = list(range(1, len(self.teams_list) + 1))
+        self.teams_name_index_map = dict(zip(self.teams_list, self.teams_range))
+        self.weeks_range = range(1, 35)  # assuming 34 matches weeks in the season
+        self.team_distance_matrix_dict = DataPreprocess.construct_distance_matrix(all_teams_coords_df,
+                                                                                  self.teams_name_index_map)
+        self.team_ranks_dict = DataPreprocess.build_team_rank(self.teams_list, self.teams_name_index_map)
+        self.match_attractiveness_dict = DataPreprocess.build_match_attractiveness(self.team_ranks_dict)
 
     @staticmethod
     def preprocess_data():
@@ -60,10 +78,42 @@ class DataPreprocess():
             for team_i in teams_distance_matrix_df.index for team_j in teams_distance_matrix_df.columns}
         return teams_distance_matrix_dict
 
-    def construct_model_input(self, all_teams_coords_df):
-        self.teams_list = list(all_teams_coords_df['team'])
-        self.teams_range = list(range(1, len(self.teams_list) + 1))
-        self.teams_name_index_map = dict(zip(self.teams_list, self.teams_range))
-        self.weeks_range = range(1, 35)  # assuming 34 game weeks in the season
-        self.team_distance_matrix_dict = DataPreprocess.construct_distance_matrix(all_teams_coords_df,
-                                                                                  self.teams_name_index_map)
+    # store team results (sum of points) over last 3 seasons
+    @staticmethod
+    def build_team_performance(teams_list):
+        team_season_points_dict = {}
+        team_season_points_dict = defaultdict(lambda: dict(zip(range(18, 21), [0] * 3)))
+        # consider last 3 seasons
+        for year in range(18, 21):
+            season_data = pd.read_csv(f"data/D1_{year}-{year + 1}.csv")
+            for index, row in season_data.iterrows():
+                if row['FTR'] == 'H' and row['HomeTeam'] in teams_list:
+                    team_season_points_dict[row['HomeTeam']][year] += 3
+                elif row['FTR'] == 'A' and row['AwayTeam'] in teams_list:
+                    team_season_points_dict[row['AwayTeam']][year] += 3
+                elif row['HomeTeam'] in teams_list and row['AwayTeam'] in teams_list:
+                    team_season_points_dict[row['HomeTeam']][year] += 1
+                    team_season_points_dict[row['AwayTeam']][year] += 1
+        return team_season_points_dict
+
+    # team rank is a weighted sum of points over last 3 seasons
+    @staticmethod
+    def build_team_rank(teams_list, team_name_index_map):
+        team_season_points_dict = DataPreprocess.build_team_performance(teams_list)
+        team_ranks_dict = {}
+        for team in team_season_points_dict.keys():
+            if team not in teams_list:
+                continue
+            team_ranks_dict.setdefault(team_name_index_map[team],
+                                       round(0.5 * team_season_points_dict[team].get(20, 0) + 0.3 *
+                                             team_season_points_dict[
+                                                 team].get(19, 0) + 0.2 * team_season_points_dict[team].get(18, 0)))
+        return team_ranks_dict
+
+    # calculate match attractiveness ranking
+    @staticmethod
+    def build_match_attractiveness(team_ranks_dict):
+        match_attractiveness_dict = {}
+        for team_i, team_j in itertools.product(team_ranks_dict, repeat=2):
+            match_attractiveness_dict[team_i, team_j] = team_ranks_dict[team_i] + team_ranks_dict[team_j]
+        return match_attractiveness_dict
