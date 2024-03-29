@@ -12,4 +12,4 @@ class ObjectiveBuilder():
                    for week_k in m.weeks_range_set)
 
     def build_objective(self, m):
-        m.OBJ = pe.Objective(rule=self.build_obj_rule)
+        m.OBJ = 1 # pe.Objective(rule=self.build_obj_rule)

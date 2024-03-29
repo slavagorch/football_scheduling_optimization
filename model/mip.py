@@ -5,6 +5,7 @@ from model.variables import VariablesBuilder
 from model.parameters import ParametersBuilder
 from model.constraints import ConstraintsBuilder
 from model.objective import ObjectiveBuilder
+from pyomo.contrib.appsi.solvers import Highs
 
 
 class Model():
@@ -43,6 +44,7 @@ class Model():
     def solve_model(m):
         # Solve model
         solver = popt.SolverFactory("cbc")
+        solver = Highs()
         model_instance = m.create_instance()
         solver.solve(
             model_instance,
