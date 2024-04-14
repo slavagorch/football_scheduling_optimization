@@ -2,8 +2,9 @@ import pyomo.environ as pe
 
 
 class ConstraintsBuilder():
-    def __init__(self, m):
+    def __init__(self, m, conflict_home_match_list):
         self.m = m
+        self.conflict_home_match_list = conflict_home_match_list
         self.build_all_constraints()
 
     def build_all_constraints(self):
@@ -13,15 +14,14 @@ class ConstraintsBuilder():
         self.home_away_matches_same_teams(self.m)
         self.build_balance_home_away_matches_constr(self.m)
         self.build_three_consecutive_rounds_constr(self.m)
-        # TODO:
-        # 1. Avoid regional doubles (e.g. no home game for two teams based in Berlin)
-        # 2. The number of trips teams make to relatively distant matches must be distributed
-        # evenly over the length of the tournament
+        self.build_conflict_home_match_constr(self.m)
+
 
     def build_each_match_is_played_once_constr(self, m):
         """
         Each unique match is played once throughout the season
         """
+
         def _each_match_is_played_once_rule(m, team_i, team_j):
             if team_i == team_j:
                 return pe.Constraint.Skip
@@ -32,11 +32,11 @@ class ConstraintsBuilder():
                                                            rule=_each_match_is_played_once_rule)
         return m
 
-
     def build_max_one_match_per_team_per_week_constr(self, m):
         """
          Maximum one match for each team per week (home or away)
         """
+
         def _max_one_match_per_team_per_week_rule(m, team_i, week_k):
             return sum(m.is_match_this_week_var[team_i, team_j, week_k]
                        for team_j in m.teams_range_set) + \
@@ -93,7 +93,7 @@ class ConstraintsBuilder():
                            for week in range(week_k, week_k + 3)) <= 2
 
         m.three_consecutive_rounds_constr1 = pe.Constraint(m.teams_range_set, m.weeks_range_set,
-                                                                  rule=three_consecutive_rounds_rule1)
+                                                           rule=three_consecutive_rounds_rule1)
         m.three_consecutive_rounds_constr2 = pe.Constraint(m.teams_range_set, m.weeks_range_set,
                                                            rule=three_consecutive_rounds_rule2)
 
@@ -114,3 +114,19 @@ class ConstraintsBuilder():
         m.no_both_matches_weeks_second_half_constr = pe.Constraint(m.teams_range_set, m.teams_range_set,
                                                                    rule=_no_both_matches_weeks_second_half_rule)
         return m
+
+    def build_conflict_home_match_constr(self, m):
+        """
+        Avoid regional doubles (e.g. no home game for two teams based in Berlin). List of conflict teams in that sense
+        is prepared in the preprocessing part.
+
+        Formulation: maximum one team from conflict pair has a home match each week
+        """
+
+        def _no_parallel_home_match_for_conflict_teams(m, team_conflict_i, team_conflict_j, week_k):
+            return sum(m.is_match_this_week_var[team_conflict_i, team_j, week_k]
+                       for team_j in m.teams_range_set) + sum(m.is_match_this_week_var[team_conflict_j, team_j, week_k]
+                                                              for team_j in m.teams_range_set) <= 1
+
+        m.conflict_home_match_constr = pe.Constraint(self.conflict_home_match_list, m.weeks_range_set,
+                                                     rule=_no_parallel_home_match_for_conflict_teams)

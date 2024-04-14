@@ -20,7 +20,8 @@ def run_pipeline():
                   dp.weeks_range,
                   dp.team_distance_matrix_dict,
                   dp.team_ranks_dict,
-                  dp.match_attractiveness_dict)
+                  dp.match_attractiveness_dict,
+                  dp.conflict_home_match_list)
     logger.info('Start of solving model')
     solution = Model.solve_model(model.m)
     logger.info('Start of postprocessing model')

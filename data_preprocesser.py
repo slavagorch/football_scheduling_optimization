@@ -22,7 +22,7 @@ class DataPreprocess():
         self.teams_name_index_map = None
         self.team_distance_matrix_dict = None
         self.team_season_points = None
-
+        self.conflict_home_match_list = None
         self.all_teams_coords_df = self.preprocess_data()
         self.construct_model_input(all_teams_coords_df=self.all_teams_coords_df)
 
@@ -34,7 +34,9 @@ class DataPreprocess():
         self.team_distance_matrix_dict = DataPreprocess.construct_distance_matrix(all_teams_coords_df,
                                                                                   self.teams_name_index_map)
         self.team_ranks_dict = DataPreprocess.build_team_rank(self.teams_list, self.teams_name_index_map)
-        self.match_attractiveness_dict = DataPreprocess.build_match_attractiveness(self.team_ranks_dict)
+        self.match_attractiveness_dict = DataPreprocess.build_match_attractiveness(self)
+        self.conflict_home_match_list = DataPreprocess.build_conflict_home_match_list(
+            self.team_distance_matrix_dict)
 
     @staticmethod
     def preprocess_data():
@@ -81,7 +83,6 @@ class DataPreprocess():
     # store team results (sum of points) over last 3 seasons
     @staticmethod
     def build_team_performance(teams_list):
-        team_season_points_dict = {}
         team_season_points_dict = defaultdict(lambda: dict(zip(range(18, 21), [0] * 3)))
         # consider last 3 seasons
         for year in range(18, 21):
@@ -96,24 +97,42 @@ class DataPreprocess():
                     team_season_points_dict[row['AwayTeam']][year] += 1
         return team_season_points_dict
 
-    # team rank is a weighted sum of points over last 3 seasons
     @staticmethod
     def build_team_rank(teams_list, team_name_index_map):
+        """
+        Team rank is a weighted sum of points over last 3 seasons
+        """
         team_season_points_dict = DataPreprocess.build_team_performance(teams_list)
         team_ranks_dict = {}
-        for team in team_season_points_dict.keys():
-            if team not in teams_list:
-                continue
+        for team in teams_list:
             team_ranks_dict.setdefault(team_name_index_map[team],
                                        round(0.5 * team_season_points_dict[team].get(20, 0) + 0.3 *
                                              team_season_points_dict[
+
                                                  team].get(19, 0) + 0.2 * team_season_points_dict[team].get(18, 0)))
         return team_ranks_dict
 
-    # calculate match attractiveness ranking
-    @staticmethod
-    def build_match_attractiveness(team_ranks_dict):
-        match_attractiveness_dict = {}
-        for team_i, team_j in itertools.product(team_ranks_dict, repeat=2):
-            match_attractiveness_dict[team_i, team_j] = team_ranks_dict[team_i] + team_ranks_dict[team_j]
+    def build_match_attractiveness(self):
+        """
+        Calculate match attractiveness ranking
+        Formula encourages match between top ranked teams in later stage of the season. With less priority matches of
+        teams with similar ranks are favoured
+        """
+        match_attractiveness_dict = {
+            (team_i, team_j, week_k): (rank_i + rank_j) * (1 + week_k / 10) * (1 - 1 / (1 + abs(rank_i - rank_j)))
+            for team_i in self.teams_range
+            for team_j in self.teams_range
+            for week_k in self.weeks_range
+            for rank_i, rank_j in [(self.team_ranks_dict[team_i], self.team_ranks_dict[team_j])]
+        }
         return match_attractiveness_dict
+
+    @staticmethod
+    def build_conflict_home_match_list(team_distance_matrix_dict):
+        """
+        Prepare list of team pairs that have stadiums close enough to avoid schedule with 
+        home matches for both on the same week
+        """
+        conflict_home_match_list = [(team_i, team_j) for (team_i, team_j) in team_distance_matrix_dict.keys()
+                                    if team_distance_matrix_dict[(team_i, team_j)] < 15 and team_i != team_j]
+        return conflict_home_match_list

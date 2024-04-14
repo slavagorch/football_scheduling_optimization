@@ -15,43 +15,50 @@ class Model():
                  weeks_range,
                  team_distance_matrix_dict,
                  team_ranks_dict,
-                 match_attractiveness_dict):
+                 match_attractiveness_dict,
+                 conflict_home_match_list):
         self.teams_list = teams_list
         self.teams_range = teams_range
         self.weeks_range = weeks_range
         self.team_ranks_dict = team_ranks_dict
         self.match_attractiveness_dict = match_attractiveness_dict
+        self.conflict_home_match_list = conflict_home_match_list
+        self.m = None
         self.build_model(teams_range,
                          weeks_range,
                          team_distance_matrix_dict,
                          team_ranks_dict,
-                         match_attractiveness_dict)
+                         match_attractiveness_dict,
+                         conflict_home_match_list)
 
     def build_model(self,
                     teams_range,
                     weeks_range,
                     team_distance_matrix_dict,
                     team_rank_dict,
-                    match_attractiveness_dict):
+                    match_attractiveness_dict,
+                    conflict_home_match_list):
+        print(f"team_rank_dict {team_rank_dict}")
+        print(f"match_attractiveness_dict {match_attractiveness_dict[(1, 13, 1)]}")
+
         self.m = pe.ConcreteModel()
         SetsBuilder(self.m, teams_range, weeks_range)
         VariablesBuilder(self.m)
         ParametersBuilder(self.m, team_distance_matrix_dict)
-        ConstraintsBuilder(self.m)
-        ObjectiveBuilder(self.m)
+        ConstraintsBuilder(self.m, conflict_home_match_list)
+        ObjectiveBuilder(self.m, team_rank_dict, match_attractiveness_dict)
 
     @staticmethod
     def solve_model(m):
         # Solve model
-        solver = popt.SolverFactory("cbc")
-        solver = Highs()
+        solver = popt.SolverFactory("gurobi")
         model_instance = m.create_instance()
         solver.solve(
             model_instance,
-            # tee=True,
+            tee=True,
             # keepfiles=True,
             # logfile="model_logfile",
-            # report_timing=True,
+            report_timing=True,
             # symbolic_solver_labels=True
         )
         return model_instance
