@@ -2,6 +2,9 @@
 
 This repository contains code for optimizing football league schedules using Pyomo, a Python-based optimization modeling language. The optimization model is demonstrated using the example of Bundesliga schedule planning.
 
+## Medium Article
+Here is a [Medium article](https://medium.com/@slavagorch/football-schedule-optimization-with-pyomo-4377838f4ee7) that describes what we are going here with football league schedule optimization :)
+
 ## Quick start
 Run the model with the following:
 - Option 1: ```python main.py```
