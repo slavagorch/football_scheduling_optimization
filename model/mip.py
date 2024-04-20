@@ -5,7 +5,8 @@ from model.variables import VariablesBuilder
 from model.parameters import ParametersBuilder
 from model.constraints import ConstraintsBuilder
 from model.objective import ObjectiveBuilder
-from pyomo.contrib.appsi.solvers import Highs
+from pyomo.contrib.appsi.solvers import Highs 
+
 
 
 class Model():
@@ -38,8 +39,6 @@ class Model():
                     team_rank_dict,
                     match_attractiveness_dict,
                     conflict_home_match_list):
-        print(f"team_rank_dict {team_rank_dict}")
-        print(f"match_attractiveness_dict {match_attractiveness_dict[(1, 13, 1)]}")
 
         self.m = pe.ConcreteModel()
         SetsBuilder(self.m, teams_range, weeks_range)
@@ -56,9 +55,9 @@ class Model():
         solver.solve(
             model_instance,
             tee=True,
-            # keepfiles=True,
-            # logfile="model_logfile",
+            keepfiles=True,
+            logfile="model_logfile",
             report_timing=True,
-            # symbolic_solver_labels=True
+            symbolic_solver_labels=True
         )
         return model_instance

@@ -7,9 +7,8 @@ class ObjectiveBuilder():
         self.match_attractiveness_dict = match_attractiveness_dict
         self.build_objective(m)
 
-    @staticmethod
-    def travel_distance_over_season(m):
-        return sum(m.distance_between_teams_param[team_i, team_j] * m.is_match_this_week_var[team_i, team_j, week_k]
+    def travel_distance_over_season(self, m):
+        return sum((m.distance_between_teams_param[team_i, team_j] ** 2) * m.is_match_this_week_var[team_i, team_j, week_k]
                    for team_i in m.teams_range_set
                    for team_j in m.teams_range_set
                    for week_k in m.weeks_range_set)

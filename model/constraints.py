@@ -47,8 +47,11 @@ class ConstraintsBuilder():
                                                                  rule=_max_one_match_per_team_per_week_rule)
         return m
 
-    # each team has equal number of home and away matches in the season
+
     def build_balance_home_away_matches_constr(self, m):
+        """
+        Each team has equal number of home and away matches in the season
+        """
         def _balance_home_away_matches_rule(m, team_i):
             return (sum(m.is_match_this_week_var[team_i, team_j, week_k]
                         for team_j in m.teams_range_set
@@ -97,8 +100,10 @@ class ConstraintsBuilder():
         m.three_consecutive_rounds_constr2 = pe.Constraint(m.teams_range_set, m.weeks_range_set,
                                                            rule=three_consecutive_rounds_rule2)
 
-    # home and away matches of the same pair of teams should be in different half of the season
     def home_away_matches_same_teams(self, m):
+        """
+        Home and away matches of the same pair of teams should be in different half of the season
+        """
         def _no_both_matches_weeks_first_half_rule(m, team_i, team_j):
             return sum(m.is_match_this_week_var[team_i, team_j, week_k] +
                        m.is_match_this_week_var[team_j, team_i, week_k]
